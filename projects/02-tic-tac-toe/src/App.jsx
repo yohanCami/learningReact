@@ -3,20 +3,32 @@ import confetti from "canvas-confetti";
 
 import Square from "./components/Square";
 import WinnerModal from "./components/WinnerModal";
+import Game from "./components/Game";
 
 import { TURNS } from "./constants";
 
 import { checkWinnerFrom, checkEndGame } from "./logic/board";
+import { saveGameToStorage, resetGameStorage } from "./logic/storage";
 
 function App() {
-  const [board, setBoard] = useState(Array(9).fill(null));
-  const [turn, setTurn] = useState(TURNS.X);
+  const [board, setBoard] = useState(() => {
+    const boardFromStorage = window.localStorage.getItem("board");
+    return boardFromStorage
+      ? JSON.parse(boardFromStorage)
+      : Array(9).fill(null);
+  });
+  const [turn, setTurn] = useState(() => {
+    const turnFromStorage = window.localStorage.getItem("turn");
+    return turnFromStorage ? turnFromStorage : TURNS.X;
+  });
   const [winner, setWinner] = useState(null);
 
   const resetGame = () => {
     setBoard(Array(9).fill(null));
     setTurn(TURNS.X);
     setWinner(null);
+
+    resetGameStorage();
   };
 
   const updateBoard = (index) => {
@@ -30,6 +42,9 @@ function App() {
     //Cambiar de turno
     const newTurn = turn === TURNS.X ? TURNS.O : TURNS.X;
     setTurn(newTurn);
+
+    //Guardar partida
+    saveGameToStorage({ board: newBoard, turn: newTurn });
 
     //Revisar si hay un ganador
     const newWinner = checkWinnerFrom(newBoard);
@@ -46,13 +61,7 @@ function App() {
     <main className="board">
       <h1>Tik tak toe</h1>
       <button onClick={resetGame}>Empezar de nuevo</button>
-      <section className="game">
-        {board.map((_, index) => (
-          <Square key={index} index={index} updateBoard={updateBoard}>
-            {board[index]}
-          </Square>
-        ))}
-      </section>
+      <Game board={board} updateBoard={updateBoard} />
       <section className="turn">
         <Square isSelected={turn === TURNS.X}>{TURNS.X}</Square>
         <Square isSelected={turn === TURNS.O}>{TURNS.O}</Square>
